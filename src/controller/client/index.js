@@ -1,3 +1,3 @@
-exports.getClients = require('../client/getClientsController')
-exports.postClients = require('../client/postClientController')
-exports.deleteClients = require('../client/deleteClientController')
+exports.getClients = require('../getClientsController')
+exports.postClients = require('./postClientController')
+exports.deleteClients = require('./deleteClientController')
