@@ -1,69 +1,105 @@
+require('dotenv').config()
 const cheerio = require('cheerio')
 const axios = require('axios').default
 const {handlePromise} = require('./util')
+
+const logger = require('../src/logger/logger')
+const mongo = require('../src/database/mongo')
+mongo.connect()
+const {clientSchema} = require('../src/models/clients.model')
+
+const parallelCount = 20
+
 const homePageUrl = () => `https://www.companydetails.in/latest-registered-company-mca`
-const clientPageUrl = (clientId) => `https://companydetails.in/company/${clientId}`
 
 const loadHomePage = async (url) => {
     const [response, error] = await handlePromise(axios.get(url))
     if (error) {
+        logger.error({
+            service: "crawler",
+            data: {url: url},
+            error: JSON.stringify(error),
+            message: error.message,
+            stackTrace: error.stackTrace
+        })
         throw error
     }
     if (response && response.status === 200) {
         let clientList = parseClientsList(response.data)
-        clientList = clientList.slice(0, 1)
-        clientList = await clientList.map(async client => {
-            const profileInfo = await parseClientProfileInfo(client.profileUrl)
-            console.log(profileInfo)
-        })
+        let bufferedClientList = []
+        for (let i = 0; i < clientList.length; i = i + parallelCount) {
+            bufferedClientList.push(clientList.slice(i, i + parallelCount))
+        }
+        clientList = []
+        for (let chunkedClientList of bufferedClientList) {
+            chunkedClientList = await Promise.all(chunkedClientList.map(client => parseClientProfileInfo(client.profileUrl)))
+            chunkedClientList.forEach(client => {
+                if ("name" in client
+                    && "CIN" in client
+                    && "contactDetail" in client
+                    && "email" in client.contactDetail) {
+                    clientSchema.create(client).catch(error => {
+                    })
+
+                } else {
+                    console.log(client)
+                }
+            })
+            clientList.push(...chunkedClientList)
+        }
     }
 }
 const parseClientProfileInfo = async (profileUrl) => {
+    console.log(`Parsing profile info for ${profileUrl}`)
+    const profileInfo = {}
     const [response, error] = await handlePromise(axios.get(profileUrl))
-    if (error) {
-        throw error
-    }
     if (response && response.status === 200) {
-        const profileInfo = {}
         const $ = cheerio.load(response.data)
 
-        /*profileInfo["description"] = $(`#form1 > div > div > div > div > div > div > div > div.col-sm-12`).first().text()
-        profileInfo["description"] = profileInfo["description"].toString().trim().replace(/\n/g, " ");
-       */
-
         profileInfo["name"] = $(`#basic_details > tbody > tr:nth-child(1) > td`).first().text()
-        profileInfo["name"] = profileInfo["name"].toString().trim()
 
         profileInfo["activity"] = $(`#basic_details > tbody > tr:nth-child(2) > td`).first().text()
-        profileInfo["activity"] = profileInfo["activity"].toString().trim()
 
         profileInfo["CIN"] = $(`#basic_details > tbody > tr:nth-child(3) > td`).first().text()
-        profileInfo["CIN"] = profileInfo["CIN"].toString().trim()
 
         profileInfo["registrationDate"] = $(`#basic_details > tbody > tr:nth-child(4) > td`).first().text()
-        profileInfo["registrationDate"] = profileInfo["registrationDate"].toString().trim()
 
         profileInfo["category"] = $(`#basic_details > tbody > tr:nth-child(5) > td`).first().text()
-        profileInfo["category"] = profileInfo["category"].toString().trim()
 
         profileInfo["subCategory"] = $(`#basic_details > tbody > tr:nth-child(6) > td`).first().text()
-        profileInfo["subCategory"] = profileInfo["subCategory"].toString().trim()
 
         profileInfo["class"] = $(`#basic_details > tbody > tr:nth-child(7) > td`).first().text()
-        profileInfo["class"] = profileInfo["class"].toString().trim()
 
         profileInfo["ROC"] = $(`#company_status > tbody > tr:nth-child(1) > td`).first().text()
-        profileInfo["ROC"] = profileInfo["ROC"].toString().trim()
 
         profileInfo["status"] = $(`#company_status > tbody > tr:nth-child(2) > td > span`).first().text()
-        profileInfo["status"] = profileInfo["status"].toString().trim()
 
         profileInfo["isCompanyListed"] = $(`#company_status > tbody > tr:nth-child(3) > td`).first().text()
-        profileInfo["isCompanyListed"] = profileInfo["isCompanyListed"].toString().trim()
-        console.log(profileInfo)
 
+        profileInfo["authorizedCapital"] = $(`#company_fin > tbody > tr:nth-child(1) > td`).first().text()
 
+        profileInfo["paidUpCapital"] = $(`#company_fin > tbody > tr:nth-child(2) > td`).first().text()
+
+        const contactDetail = {}
+        contactDetail["state"] = $(`#company_contactdetails > tbody > tr:nth-child(1) > td > a`).first().text()
+        contactDetail["zipCode"] = $(`#company_contactdetails > tbody > tr:nth-child(2) > td`).first().text()
+        contactDetail["country"] = $(`#address`).first().text()
+        contactDetail["address"] = $(`#company_contactdetails > tbody > tr:nth-child(4) > td`).first().text()
+        contactDetail["email"] = $(`#company_contactdetails > tbody > tr:nth-child(5) > td`).first().text()
+        profileInfo["contactDetail"] = contactDetail
+    } else {
+        logger.error({
+            service: "crawler",
+            title: `parseClientProfileInfo ${profileUrl}`,
+            data: {
+                profileUrl: profileUrl
+            },
+            error: JSON.stringify(error),
+            message: error.message,
+            stackTrace: error.stackTrace
+        })
     }
+    return profileInfo
 }
 /**
  * @param {string} html
@@ -82,18 +118,19 @@ const parseClientsList = (html) => {
         clientInfo["profileUrl"] = nameElement.first().attr("href")
         clientInfo["profileUrl"] = clientInfo["profileUrl"].toString().trim()
 
-        // client name
-        clientInfo["name"] = nameElement.first().text()
-        clientInfo["name"] = clientInfo["name"].toString().trim()
+        /*
+                // client name
+                clientInfo["name"] = nameElement.first().text()
+                clientInfo["name"] = clientInfo["name"].toString().trim()
 
-        // client state
-        clientInfo["state"] = $(this).find(`td:nth-child(2) a`).first().text()
-        clientInfo["state"] = clientInfo["state"].toString().trim()
+                // client state
+                clientInfo["state"] = $(this).find(`td:nth-child(2) a`).first().text()
+                clientInfo["state"] = clientInfo["state"].toString().trim()
 
-        //client updated date
-        clientInfo["updatedDate"] = $(this).find(`td:nth-child(3)`).first().text()
-        clientInfo["updatedDate"] = clientInfo["updatedDate"].toString().trim()
-
+                //client updated date
+                clientInfo["updatedDate"] = $(this).find(`td:nth-child(3)`).first().text()
+                clientInfo["updatedDate"] = clientInfo["updatedDate"].toString().trim()
+        */
         clientList.push(clientInfo)
     })
     return clientList

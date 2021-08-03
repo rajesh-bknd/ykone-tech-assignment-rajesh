@@ -1,41 +1,77 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+require('dotenv').config()
+const createError = require('http-errors');
+const express = require('express');
+const path = require('path');
 
-var indexRouter = require('./src/routes/v1.0');
-var usersRouter = require('./src/routes/v1.0/client');
+const indexRouter = require('./src/routes/v1.0');
 
-var app = express();
+const app = express();
 
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'jade');
 
-app.use(logger('dev'));
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
+app.use(express.urlencoded({extended: false}));
 app.use(express.static(path.join(__dirname, 'public')));
+const logger = require('./src/logger/logger')
+
+// connect to database
+const mongo = require('./src/database/mongo')
+mongo.connect()
 
 app.use('/', indexRouter);
-app.use('/users', usersRouter);
+
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
+app.use(function (req, res, next) {
+    logger.info({
+        service: "RestAPI",
+        title: `404 ${req.url}`,
+        data: {
+            url: req.url,
+            query: req.query,
+            params: req.params,
+            headers: req.headers,
+            body: req.body
+        }
+    })
+    res.status(404).json({message: `Sorry, you're landed on Mars ${req.url}`})
 });
 
 // error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
+app.use(function (error, req, res, next) {
+    logger.error({
+        service: "RestAPI",
+        title: `Unhandled error ${req.url}`,
+        data: {
+            url: req.url,
+            query: req.query,
+            params: req.params,
+            headers: req.headers,
+            body: req.body
+        },
+        error: JSON.stringify(error),
+        message: error.message,
+        stackTrace: error.stackTrace
+    })
+    res.status(500).json({message: error.message});
 });
 
+process.on('uncaughtException', (error) => {
+    logger.error({
+        service: "RestAPI",
+        title: `uncaughtException`,
+        error: JSON.stringify(error),
+        message: error.message,
+        stackTrace: error.stackTrace
+    })
+})
+process.on('exit', (code) => {
+    logger.error({
+        service: "RestAPI",
+        title: `uncaughtException`,
+        code: code,
+        error: JSON.stringify(error),
+        message: error.message,
+        stackTrace: error.stackTrace
+    })
+})
 module.exports = app;

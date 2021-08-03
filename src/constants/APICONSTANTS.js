@@ -1,1 +1,1 @@
-exports.CLIENT = `/clients`
+exports.CLIENTS= `/clients`
