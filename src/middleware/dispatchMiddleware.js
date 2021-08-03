@@ -3,8 +3,9 @@ const logger = require('../logger/logger')
 module.exports = (controller) => {
     return async (req, res) => {
         try {
+            res.status(OK)
             let result = await controller(req, res)
-            res.status(OK).json(result)
+            res.json(result)
         } catch (error) {
             logger.error({
                 service: "RestAPI",
