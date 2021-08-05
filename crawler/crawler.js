@@ -157,7 +157,6 @@ const parseClientsList = (html) => {
     })
     return clientList
 }
-loadHomePage(homePageUrl()).then().catch()
 module.exports = {
     loadHomePage,
     homePageUrl
