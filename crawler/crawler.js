@@ -1,14 +1,21 @@
-require('dotenv').config()
+const path = require('path')
+require('dotenv').config({path: path.join(__dirname, "../", ".env")})
+
 const cheerio = require('cheerio')
 const axios = require('axios').default
 const {handlePromise} = require('./util')
 
+// import logs
 const logger = require('../src/logger/logger')
+
+// connect to mongo database
 const mongo = require('../src/database/mongo')
 mongo.connect()
-const {clientSchema} = require('../src/models/clients.model')
+const {clientSchema, columns} = require('../src/models/clients.model')
+const {validateClientSchema} = require('../src/validation/client.validation')
 
-const parallelCount = 20
+// number of parallel requests to website
+const parallelCount = 1
 
 const homePageUrl = () => `https://www.companydetails.in/latest-registered-company-mca`
 
@@ -27,6 +34,7 @@ const loadHomePage = async (url) => {
     if (response && response.status === 200) {
         let clientList = parseClientsList(response.data)
         let bufferedClientList = []
+        // chunk companies, so that crawling can be grouped
         for (let i = 0; i < clientList.length; i = i + parallelCount) {
             bufferedClientList.push(clientList.slice(i, i + parallelCount))
         }
@@ -34,20 +42,33 @@ const loadHomePage = async (url) => {
         for (let chunkedClientList of bufferedClientList) {
             chunkedClientList = await Promise.all(chunkedClientList.map(client => parseClientProfileInfo(client.profileUrl)))
             chunkedClientList.forEach(client => {
-                if ("name" in client
-                    && "CIN" in client
-                    && "contactDetail" in client
-                    && "email" in client.contactDetail) {
-                    clientSchema.create(client).catch(error => {
+                // validate client profile information
+                const {error} = validateClientSchema(client)
+                if (error) {
+                    logger.error({
+                        service: "crawler",
+                        title: `parseClientProfileInfo ${url}`,
+                        data: {profileUrl: url},
+                        error: JSON.stringify(error),
+                        message: error.message,
                     })
-
                 } else {
-                    console.log(client)
+                    // upsert client profile info using CIN
+                    clientSchema.updateOne({[columns.CIN]: client[columns.CIN]}, {$set:{...client}}, {upsert: true}).catch(error => {
+                        logger.error({
+                            service: "crawler",
+                            title: `parseClientProfileInfo ${url}`,
+                            data: {profileUrl: url},
+                            error: JSON.stringify(error),
+                            message: error.message,
+                        })
+                    })
                 }
             })
             clientList.push(...chunkedClientList)
         }
     }
+    return true
 }
 const parseClientProfileInfo = async (profileUrl) => {
     console.log(`Parsing profile info for ${profileUrl}`)
@@ -55,7 +76,7 @@ const parseClientProfileInfo = async (profileUrl) => {
     const [response, error] = await handlePromise(axios.get(profileUrl))
     if (response && response.status === 200) {
         const $ = cheerio.load(response.data)
-
+        profileInfo["profileUrl"] = profileUrl
         profileInfo["name"] = $(`#basic_details > tbody > tr:nth-child(1) > td`).first().text()
 
         profileInfo["activity"] = $(`#basic_details > tbody > tr:nth-child(2) > td`).first().text()
@@ -101,6 +122,7 @@ const parseClientProfileInfo = async (profileUrl) => {
     }
     return profileInfo
 }
+
 /**
  * @param {string} html
  * @returns {Object[]}
@@ -135,7 +157,8 @@ const parseClientsList = (html) => {
     })
     return clientList
 }
-
-loadHomePage(homePageUrl()).then(console.table).catch(error => {
-    console.error(error)
-})
+loadHomePage(homePageUrl()).then().catch()
+module.exports = {
+    loadHomePage,
+    homePageUrl
+}

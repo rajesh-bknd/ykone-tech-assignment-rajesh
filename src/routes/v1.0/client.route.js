@@ -2,9 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const {deleteClients, getClients, postClients} = require('../../controller/client')
-const {CLIENT: ClientRoute} = require('../../constants/APICONSTANTS')
 const dispatch = require('../../middleware/dispatchMiddleware')
-
 
 router.route('')
     /*
@@ -15,8 +13,7 @@ router.route('')
     /**
      * POST clients/    Create a new client
      */
-    .post(dispatch(postClients.addNewClient))
-
+    .post( dispatch(postClients.addNewClient))
 
 router.route(`/:clientId`)
     /*

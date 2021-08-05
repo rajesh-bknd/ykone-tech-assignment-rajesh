@@ -10,6 +10,7 @@ const COLUMNS = {
     SUB_CATEGORY: "subCategory",
     CLASS: "class",
     ROC: "ROC",
+    PROFILE_URL: "profileUrl",
     STATUS: "status",
     IS_COMPANY_LISTED: "isCompanyListed",
     AUTHORIZED_CAPITAL: "authorizedCapital",
@@ -22,6 +23,10 @@ const COLUMNS = {
     COUNTRY: "country"
 }
 const clientSchema = new mongoose.Schema({
+    [COLUMNS.PROFILE_URL]: {
+        "type": "string",
+        "required":true
+    },
     [COLUMNS.NAME]: {
         "type": "String",
         "required": true
