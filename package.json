@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
+    "launch": "npm install && npm run test && npm run start",
     "start": "node ./bin/www",
     "test": "jest",
     "crawl-companies": "cd ./crawler && gulp"
