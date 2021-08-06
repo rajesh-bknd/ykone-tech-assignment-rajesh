@@ -24,6 +24,10 @@
 
 `npm run test`
 #### To run unit tests
+
+## Postman Collection
+- Find API collection at ./src/docs/Companies.postman_collection.json
+
 ## Dependencies
 
 - [cors](https://ghub.io/cors): Node.js CORS middleware

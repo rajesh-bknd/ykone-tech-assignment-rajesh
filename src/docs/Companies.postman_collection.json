@@ -1,0 +1,134 @@
+{
+	"info": {
+		"_postman_id": "8134119f-27cf-4592-9767-8579e2ea45c3",
+		"name": "Companies",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get all clients",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/clients",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"clients"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get a client by CIN",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/clients/U67190KA2021PTC150240",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"clients",
+						"U67190KA2021PTC150240"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Add new client",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n        \"contactDetail\": {\n            \"state\": \" KARNATAKA\",\n            \"zipCode\": \"560094\",\n            \"country\": \"INDIA\",\n            \"address\": \"3RD FLOOR, NO.10.OLD NO.236 SANJAYNAGAR,RMV EXTENSION 2ND STAGE BANGALORE BANGALORE KA 560094 IN \",\n            \"email\": \"contact@web2net.in\"\n        },\n        \"profileUrl\": \"https://www.companydetails.in/company/aaruhi-financial-services-private-limited\",\n        \"name\": \"rajesh FINANCIAL SERVICES PRIVATE LIMITED\",\n        \"activity\": \"ACTIVITIES AUXILIARY TO FINANCIAL INTERMEDIATION\",\n        \"CIN\": \"U67190KA2021PTC150230\",\n        \"registrationDate\": \"2021-08-02T18:30:00.000Z\",\n        \"category\": \"COMPANY LIMITED BY SHARES\",\n        \"subCategory\": \"NON-GOVT COMPANY\",\n        \"class\": \"super\",\n        \"ROC\": \"bg\",\n        \"status\": \"ACTIVE\",\n        \"isCompanyListed\": \"UnListed\",\n        \"authorizedCapital\": 1000000,\n        \"paidUpCapital\": 100000\n    }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/clients",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"clients"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete a client by CIN",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/clients/U67190KA2021PTC150230",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"clients",
+						"U67190KA2021PTC150230"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update a client by CIN",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n        \"contactDetail\": {\n            \"state\": \" KARNATAKA\",\n            \"zipCode\": \"560094\",\n            \"country\": \"INDIA\",\n            \"address\": \"3RD FLOOR, NO.10.OLD NO.236 SANJAYNAGAR,RMV EXTENSION 2ND STAGE BANGALORE BANGALORE KA 560094 IN \",\n            \"email\": \"contact@web2net.in\"\n        },\n        \"profileUrl\": \"https://www.companydetails.in/company/aaruhi-financial-services-private-limited\",\n        \"name\": \"rajesh FINANCIAL SERVICES PRIVATE LIMITED\",\n        \"activity\": \"ACTIVITIES AUXILIARY TO FINANCIAL INTERMEDIATION\",\n        \"CIN\": \"U67190KA2021PTC150230\",\n        \"registrationDate\": \"2021-08-02T18:30:00.000Z\",\n        \"category\": \"COMPANY LIMITED BY SHARES\",\n        \"subCategory\": \"NON-GOVT COMPANY\",\n        \"class\": \"super\",\n        \"ROC\": \"bg\",\n        \"status\": \"ACTIVE\",\n        \"isCompanyListed\": \"UnListed\",\n        \"authorizedCapital\": 1000000,\n        \"paidUpCapital\": 100000\n    }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/clients/U67190KA2021PTC150230",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"clients",
+						"U67190KA2021PTC150230"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
